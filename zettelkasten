@@ -1,0 +1,31 @@
+#!/usr/bin/env racket
+#lang racket/base
+
+(require "operations.rkt")
+
+(define operations-namespace (make-base-namespace))
+(parameterize ([current-namespace operations-namespace])
+  (namespace-require '"operations.rkt"))
+
+(define (get-op op)
+  (let ([ops '((("a" "add") add) (("v" "view") view)
+                                 (("d" "delete") delete)
+                                 (("e" "edit") edit)
+                                 (("ls" "list") ls)
+                                 (("g" "grep") grep))])
+
+    (car (cdr (car (filter (λ (el) (member op (car el))) ops))))))
+
+(define (main args)
+  (when (null? args)
+    (for-each
+     displayln
+     '("usage: zettelkasten {add | list | {view | edit | delete} 'zet-id' | grep 'regexp'}"))
+    (exit 1))
+  (letrec ([operation (list-ref args 0)])
+    (cond
+      [(> (length args) 1)
+       (eval (list (get-op operation) (list-ref args 1)) operations-namespace)]
+      [else (eval (list (get-op operation)) operations-namespace)])))
+
+(main (vector->list (current-command-line-arguments)))
